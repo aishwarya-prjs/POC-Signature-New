@@ -14,44 +14,46 @@ Detects signatures from cheques, forms, and agreements using two ML models.
 - Returns a structured JSON result
 
 ---
-
 ## Project Structure
+
+```
 POC-Signature/
-│
-├── api/                          ← REST API (Your work)
+├── api/                          
 │   ├── routers/
-│   │   ├── health.py             # /health, /storage/health
-│   │   ├── upload.py             # /upload
-│   │   ├── files.py              # /files, /files/{name}, DELETE
-│   │   └── detect.py             # /detect — main endpoint
+│   │   ├── health.py             # GET /health, GET /storage/health
+│   │   ├── upload.py             # POST /upload
+│   │   ├── files.py              # GET /files, GET /files/{name}, DELETE /files/{name}
+│   │   └── detect.py             # POST /detect — classify document + find signature
 │   ├── src/
 │   │   └── storage/
-│   │       └── minio_client.py   # MinIO client
-│   ├── models/                   # .pt files go here (see Model Files below)
-│   ├── dependencies.py           # Shared models + storage instance
-│   ├── main.py                   # App entry point
+│   │       └── minio_client.py   # MinIO connect, upload, download, presigned URLs
+│   ├── models/                   # Trained .pt files stored here
+│   │   ├── document_classifier.pt
+│   │   └── signature_yolov8_v2.pt
+│   ├── dependencies.py           # Loads both models + storage on startup
+│   ├── main.py                   # Registers all routers, starts FastAPI app
 │   ├── .env.example              # Environment variable template
-│   └── requirements.txt
+│   └── requirements.txt          # fastapi, uvicorn, minio, ultralytics, opencv
 │
-├── docker/                       ← Docker setup (Your work)
-│   ├── docker-compose.yml        # MinIO + API services
-│   ├── Dockerfile
-│   └── .env.example
+├── docker/                       
+│   ├── docker-compose.yml        # Spins up MinIO + API as Docker services
+│   ├── Dockerfile                # Builds the API container
+│   └── .env.example              # MinIO credentials template for Docker
 │
-├── dataset/                      ← Dataset management (Partner's work)
+├── dataset/                      
 │   ├── configs/
-│   │   └── dataset.yaml          # YOLOv8 dataset config
-│   └── augmentor.py              # Signature-safe augmentation
+│   │   └── dataset.yaml          # YOLOv8 dataset config — paths, classes, splits
+│   └── augmentor.py              # Augments images — rotation, brightness, noise
 │
-├── training/                     ← Model training (Partner's work)
-│   ├── detector.py               # YOLOv8 inference wrapper
-│   ├── enhancer.py               # Image quality + enhancement
-│   ├── pipeline.py               # End-to-end orchestrator
-│   └── train.py                  # Training script
+├── training/                     
+│   ├── detector.py               # YOLOv8 model wrapper — train, predict, isolate
+│   ├── enhancer.py               # Quality scoring — blur, contrast, CLAHE, binarize
+│   ├── pipeline.py               # Full pipeline — assess, enhance, detect, store
+│   └── train.py                  # Training script — runs on Google Colab T4 GPU
 │
 ├── .gitignore
 └── README.md
-
+```
 ---
 
 ## Model Files
