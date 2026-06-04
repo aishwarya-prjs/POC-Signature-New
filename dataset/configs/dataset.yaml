@@ -1,0 +1,37 @@
+# YOLOv8 Dataset Configuration
+path: ../data/processed
+train: images/train
+val: images/val
+test: images/test
+
+nc: 3  # number of classes
+names:
+  0: signature
+  1: initials
+  2: stamp
+
+# Recommended Kaggle datasets for signature detection:
+# 1. "Dataset of Signature Verification" by robinreni: ~1600 genuine + forged
+#    https://www.kaggle.com/datasets/robinreni/signature-verification-dataset
+# 2. "Handwritten Signatures" by divyanshrai3101
+#    https://www.kaggle.com/datasets/divyanshrai3101/handwritten-signatures
+# 3. "CEDAR Signature Dataset" - benchmark for verification
+#    Search: cedar signature verification kaggle
+# 4. "Tobacco800 document dataset" - real forms/documents with signatures
+#    https://www.kaggle.com/datasets/patrickaudriaz/tobacco800
+# 5. "SigNet" dataset - 4000 genuine, 4000 forged
+#    Search: signet signature kaggle
+
+augmentation:
+  hsv_h: 0.015
+  hsv_s: 0.2
+  hsv_v: 0.3
+  degrees: 5.0
+  translate: 0.1
+  scale: 0.2
+  shear: 2.0
+  perspective: 0.0002
+  flipud: 0.0
+  fliplr: 0.0     # No horizontal flip — breaks signature orientation
+  mosaic: 0.5
+  mixup: 0.1
