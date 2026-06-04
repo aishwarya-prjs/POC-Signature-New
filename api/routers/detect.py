@@ -21,7 +21,6 @@ async def detect(file: UploadFile = File(...)):
 
     h, w = image.shape[:2]
 
-    # ── Classify document type ────────────────────────────────
     cls_result  = classifier.predict(image, verbose=False)
     probs       = cls_result[0].probs
     top1_idx    = int(probs.top1)
@@ -29,7 +28,6 @@ async def detect(file: UploadFile = File(...)):
     class_names = cls_result[0].names
     doc_type    = class_names[top1_idx] if top1_conf >= 0.5 else "others"
 
-    # ── Detect signatures ─────────────────────────────────────
     det_result = detector.predict(image, conf=0.3, verbose=False)
     detections = []
 
@@ -62,7 +60,6 @@ async def detect(file: UploadFile = File(...)):
             "crop_url": crop_url,
         })
 
-    # ── Store original ────────────────────────────────────────
     run_id      = str(uuid.uuid4())[:8]
     orig_object = f"uploads/{run_id}_{file.filename}"
     storage.upload_image(image, orig_object)
