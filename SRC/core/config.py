@@ -16,8 +16,8 @@ class Settings(BaseSettings):
 
    
     CLASSIFIER_PATH:  str   = "models/document_classifier.pt"
-    DETECTOR_PATH:    str   = "models/signature_yolov8_v2.pt"
-    CONFIDENCE:       float = 0.5
+    DETECTOR_PATH:    str   = "models/signature_yolov8_v3.pt"
+    CONFIDENCE:       float = 0.7
 
   
     API_HOST:         str   = "0.0.0.0"

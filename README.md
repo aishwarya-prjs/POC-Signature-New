@@ -17,42 +17,95 @@ Detects signatures from cheques, forms, and agreements using two ML models.
 ## Project Structure
 
 ```
-POC-Signature/
-├── api/                          
-│   ├── routers/
-│   │   ├── health.py             # GET /health, GET /storage/health
-│   │   ├── upload.py             # POST /upload
-│   │   ├── files.py              # GET /files, GET /files/{name}, DELETE /files/{name}
-│   │   └── detect.py             # POST /detect — classify document + find signature
-│   ├── src/
-│   │   └── storage/
-│   │       └── minio_client.py   # MinIO connect, upload, download, presigned URLs
-│   ├── models/                   # Trained .pt files stored here
-│   │   ├── document_classifier.pt
-│   │   └── signature_yolov8_v2.pt
-│   ├── dependencies.py           # Loads both models + storage on startup
-│   ├── main.py                   # Registers all routers, starts FastAPI app
-│   ├── .env.example              # Environment variable template
-│   └── requirements.txt          # fastapi, uvicorn, minio, ultralytics, opencv
+Document-Signature-Detection/
 │
-├── docker/                       
-│   ├── docker-compose.yml        # Spins up MinIO + API as Docker services
-│   ├── Dockerfile                # Builds the API container
-│   └── .env.example              # MinIO credentials template for Docker
+├── src/                                        
+│   │
+│   ├── api/                                    
+│   │   ├── __init__.py
+│   │   ├── app.py                              # FastAPI app initialization & setup
+│   │   └── routers/                            
+│   │       ├── __init__.py
+│   │       ├── auth.py                         # Login and token generation endpoints
+│   │       ├── health.py                       # System and storage status checks
+│   │       ├── upload.py                       # Direct image upload endpoints
+│   │       ├── files.py                        # MinIO file retrieval and deletion
+│   │       └── detect.py                       # Main document & signature ML pipeline
+│   │
+│   ├── auth/                                   
+│   │   ├── __init__.py
+│   │   ├── jwt_handler.py                      # JWT encoding and decoding utilities
+│   │   ├── oauth2.py                           # Route protection and security scopes
+│   │   └── users.py                            # User credentials and database mock
+│   │
+│   ├── core/                                   
+│   │   ├── __init__.py
+│   │   ├── config.py                           # Environment variables and settings
+│   │   └── dependencies.py                     # ML models and storage client injection
+│   │
+│   ├── dataset/                                
+│   │   ├── configs/
+│   │   │   └── dataset.yaml                    # YOLOv8 dataset splits and classes
+│   │   └── augmentor.py                        # Image rotation, noise, and adjustments
+│   │
+│   ├── docker/                                 
+│   │   ├── docker-compose.yml                  # Container orchestration (API + MinIO)
+│   │   └── Dockerfile                          # Python 3.11 API image definition
+│   │
+│   ├── docs/                                   
+│   │   ├── api_design.md                       # API endpoint specifications
+│   │   └── architecture.md                     # System architecture documentation
+│   │
+│   ├── logs/                                   
+│   │   └── app.log                             # Auto-generated application logs
+│   │
+│   ├── middleware/                             
+│   │   ├── __init__.py
+│   │   └── request_logger.py                   # Custom HTTP request/response logging
+│   │
+│   ├── models/                                 
+│   │   ├── document_classifier.pt              # Trained document classification weights
+│   │   └── signature_yolov8_v2.pt              # Trained YOLOv8 signature detection weights
+│   │
+│   ├── services/                               
+│   │   ├── __init__.py
+│   │   ├── detection_service.py                # Core logic for YOLOv8 model execution
+│   │   ├── enhancement_service.py              # Logic for triggering image improvements
+│   │   ├── storage_service.py                  # Routing files to specific MinIO buckets
+│   │   ├── upload_service.py                   # Standard upload processing logic
+│   │   └── validation_service.py               # Image dimension and size checks
+│   │
+│   ├── storage/                                
+│   │   ├── __init__.py
+│   │   └── minio_client.py                     # MinIO connection and S3 wrapper methods
+│   │
+│   ├── tests/                                  
+│   │   ├── __init__.py
+│   │   ├── test_auth.py                        # Unit tests for JWT and login
+│   │   ├── test_detect.py                      # Unit tests for the ML pipeline
+│   │   ├── test_health.py                      # Unit tests for system health
+│   │   ├── test_upload.py                      # Unit tests for MinIO uploads
+│   │   └── test_validation.py                  # Unit tests for file formatting
+│   │
+│   ├── training/                               
+│   │   ├── __init__.py
+│   │   ├── detector.py                         # YOLOv8 loading and bounding box isolation
+│   │   ├── enhancer.py                         # CLAHE, denoising, and blur detection
+│   │   ├── pipeline.py                         # Orchestrator tying ML models together
+│   │   ├── train.py                            # CLI script for fine-tuning YOLOv8
+│   │   └── pdf_utils.py                        # Poppler-based PDF-to-image extraction
+│   │
+│   └── utils/                                  
+│       ├── __init__.py
+│       ├── logger.py                           # Loguru structured JSON log configuration
+│       └── file_validator.py                   # Magic byte checks for secure uploads
 │
-├── dataset/                      
-│   ├── configs/
-│   │   └── dataset.yaml          # YOLOv8 dataset config — paths, classes, splits
-│   └── augmentor.py              # Augments images — rotation, brightness, noise
-│
-├── training/                     
-│   ├── detector.py               # YOLOv8 model wrapper — train, predict, isolate
-│   ├── enhancer.py               # Quality scoring — blur, contrast, CLAHE, binarize
-│   ├── pipeline.py               # Full pipeline — assess, enhance, detect, store
-│   └── train.py                  # Training script — runs on Google Colab T4 GPU
-│
-├── .gitignore
-└── README.md
+├── main.py                                     # Uvicorn server entry point
+├── .env                                        # Local environment variables
+├── .env.example                                # Template for environment setup
+├── .gitignore                                  # Git exclusion rules
+├── requirements.txt                            # Python package dependencies
+└── README.md                                   # Project documentation
 ```
 ---
 
