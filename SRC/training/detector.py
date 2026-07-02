@@ -190,7 +190,7 @@ class SignatureDetector:
         start = time.perf_counter()
 
         results = self.model.predict(
-            source=image,
+            source=image,imgsz=1024,
             conf=self.confidence,
             iou=self.iou,
             device=self.device,

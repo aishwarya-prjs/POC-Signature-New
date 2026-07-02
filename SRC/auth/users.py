@@ -18,8 +18,6 @@
         #return False
     ##return verify_password(password, USERS_DB[username])
 
-# Simple in-memory user store for POC
-# Replace with database in production
 
 USERS_DB = {
     "admin": "admin123",

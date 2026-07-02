@@ -10,11 +10,10 @@ from SRC.services.detection_service import classify_document, detect_signatures
 from SRC.utils.file_validator import verify_file_format
 from SRC.services.storage_service import store_accepted, store_enhanced, store_rejected
 
-
-from SRC.training.pdf_utils import pdf_to_image 
+# Import the newly updated function
+from SRC.training.pdf_utils import pdf_to_images 
 
 router = APIRouter(tags=["Detection"])
-
 
 @router.post("/detect")
 async def detect(
@@ -23,7 +22,7 @@ async def detect(
 ):
     contents = await file.read()
 
-
+    # File format verification
     fmt = verify_file_format(contents, file.content_type)
     if not fmt["valid"]:
         return JSONResponse(status_code=400, content={
@@ -31,20 +30,25 @@ async def detect(
             "reason": fmt["reason"],
         })
 
-  
+    # PDF vs Image Routing logic
     if fmt["actual"] == "pdf":
         try:
-            image = pdf_to_image(contents)
+            # Get the list of all pages
+            images = pdf_to_images(contents)
+            # Use the first page as our primary representative image
+            image = images[0] 
         except Exception as e:
             raise HTTPException(422, f"Could not process PDF: {str(e)}")
     else:
         nparr = np.frombuffer(contents, np.uint8)
         image = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        # Wrap single images in a list so the detection loop below works
+        images = [image]
 
     if image is None:
         raise HTTPException(422, "Could not decode image")
 
-    # Validation
+    # Validation (Checks Page 1)
     validation = validate_image(image, len(contents))
     if not validation["passed"]:
         rejected_path = store_rejected(
@@ -59,10 +63,10 @@ async def detect(
             "stored": {"rejected": rejected_path},
         })
 
-
+    # Quality assessment before (Checks Page 1)
     before = assess_quality(image)
 
-
+    # Enhancement (Applied to Page 1)
     needs_enhancement = before.overall_score < 65
     enhanced_image    = image
     enhancements      = []
@@ -70,15 +74,30 @@ async def detect(
     if needs_enhancement:
         enhanced_image, enhancements = enhance_image(image, before)
 
-
+    # Quality assessment after
     after = assess_quality(enhanced_image)
 
+    # Classify document type (Based on Page 1)
     doc_info = classify_document(enhanced_image)
 
-   
-    detections = detect_signatures(enhanced_image, storage)
+    # --- THE NEW MULTI-PAGE DETECTOR ---
+    all_detections = []
+    
+    # Loop through every single page extracted from the PDF
+    for page_num, img in enumerate(images):
+        # If it's the first page and it needed enhancement, use the enhanced version.
+        # Otherwise, use the raw page.
+        target_img = enhanced_image if page_num == 0 else img
+        
+        # Run YOLO on this specific page
+        page_detections = detect_signatures(target_img, storage)
+        all_detections.extend(page_detections)
 
+    # Reassign our combined list back to the detections variable
+    detections = all_detections
+    # -----------------------------------
 
+    # Store in MinIO (Stores Page 1 as the main document)
     orig_path     = store_accepted(storage, image, file.filename)
     enhanced_path = store_enhanced(storage, enhanced_image, file.filename) \
                     if needs_enhancement else None
