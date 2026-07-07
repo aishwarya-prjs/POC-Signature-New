@@ -6,8 +6,8 @@ __pycache__/
 *.pyc
 
 # Model files
-*.pt
-*.pth
+# *.pt
+# *.pth
 
 # Datasets
 data/
